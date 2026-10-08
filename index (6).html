@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FA Wholesale Entry (Light)</title>
+<meta name="theme-color" content="#11455b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FA Wholesale Entry">
+<style>
+  :root { --navy:#11455b; --green:#2fcb6e; --pale-red:#fdeaea; --pale-green:#eafbf1; --amber:#fff7e6; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:#f5f7f8; margin:0; padding:0 0 40px; color:#1a1a1a; }
+  header { background:var(--navy); color:#fff; padding:18px 16px; text-align:center; }
+  header h1 { margin:0; font-size:19px; }
+  header p { margin:4px 0 0; font-size:13px; opacity:.85; }
+  #net { font-size:13px; padding:8px 16px; text-align:center; background:var(--amber); color:#8a5a00; display:none; }
+  .wrap { max-width:520px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:16px; }
+  label { display:block; font-size:14px; font-weight:600; color:var(--navy); margin:14px 0 6px; }
+  input, select, textarea { width:100%; font-size:16px; padding:12px; border:1px solid #d5dbe0; border-radius:8px; background:#fff; font-family:inherit; }
+  input:disabled { background:#f0f2f4; color:#99a; }
+  textarea { min-height:60px; resize:vertical; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .grid label { margin:0 0 6px; font-size:13px; }
+  .grid > div { min-width:0; }
+  .hint { font-size:12px; color:#667; margin-top:4px; }
+  hr { border:none; border-top:1px solid #e3e7ea; margin:20px 0 0; }
+  .sec { font-size:13px; font-weight:700; color:var(--navy); margin:16px 0 2px; }
+  .btn { display:block; width:100%; padding:14px; border-radius:8px; border:none; font-size:16px; font-weight:700; cursor:pointer; margin-top:20px; }
+  .btn-primary { background:var(--green); color:#fff; }
+  .btn-secondary { background:transparent; color:var(--navy); border:1.5px solid var(--navy); margin-top:10px; }
+  .btn:disabled { opacity:.6; }
+  .msg { font-size:14px; padding:10px 12px; border-radius:8px; margin-top:12px; display:none; }
+  .msg.error { background:var(--pale-red); color:#a12727; display:block; }
+  .msg.success { background:var(--pale-green); color:#157a3d; display:block; }
+  .msg.wait { background:var(--amber); color:#8a5a00; display:block; }
+  .title { font-size:15px; font-weight:700; color:var(--navy); margin:0 0 10px; }
+  .entry { border:1px solid #e3e7ea; border-radius:8px; padding:12px; margin-bottom:10px; font-size:13px; }
+  .entry.bad { border-color:#e2a0a0; background:var(--pale-red); }
+  .entry b { color:var(--navy); }
+  .entry .amts { margin-top:6px; line-height:1.6; }
+  .entry .meta { color:#667; margin-top:4px; }
+  .entry .err { color:#a12727; margin-top:6px; }
+  .small-btn { background:none; border:1px solid var(--navy); color:var(--navy); border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; margin:8px 8px 0 0; }
+  .empty { color:#889; font-size:13px; text-align:center; padding:8px 0; }
+  .banner { background:var(--amber); color:#8a5a00; font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:14px; display:none; }
+  .results { margin-top:6px; border:1px solid #d5dbe0; border-radius:8px; overflow:hidden; display:none; }
+  .results.open { display:block; }
+  .results div { padding:10px 12px; font-size:14px; border-top:1px solid #eef1f3; cursor:pointer; }
+  .results div:first-child { border-top:none; }
+  .results div.none { color:#889; font-size:13px; cursor:default; }
+  #queueCard, #deskField { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Farm Alert - Wholesale Reconciliation Entry</h1>
+  <p>Light version - works on weak network</p>
+</header>
+<div id="net"></div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="banner" id="editBanner"></div>
+
+    <label for="date" style="margin-top:0">Date</label>
+    <input type="date" id="date">
+
+    <label for="branch">Branch</label>
+    <select id="branch"></select>
+
+    <label for="submittedBy">Your Name</label>
+    <select id="submittedBy"></select>
+
+    <label for="customerSearch">Customer Name / Pet Store</label>
+    <input type="text" id="customerSearch" autocomplete="off" disabled placeholder="Select branch first">
+    <div class="results" id="results"></div>
+    <div class="hint" id="customerHint" style="display:none">Not on the list - a new customer needs to be added to the Customers sheet first.</div>
+    <div class="hint" id="listsHint"></div>
+
+    <div class="hint" style="margin-top:14px">Fill in at least one amount below - leave the rest blank.</div>
+    <div class="grid" id="amountGrid"></div>
+
+    <hr>
+    <div class="sec">Cash Sales / Cash Deposited</div>
+    <div class="hint">If this branch took cash today, record how much came in and how much of it actually made it to the bank.</div>
+    <div class="grid" id="cashGrid"></div>
+
+    <div id="deskField">
+      <label for="cashDesk">Cash Desk</label>
+      <select id="cashDesk"></select>
+      <div class="hint">This branch has more than one cash point - pick which one this entry is for.</div>
+    </div>
+
+    <label for="notes">Notes (optional)</label>
+    <textarea id="notes" placeholder="Anything worth noting..."></textarea>
+
+    <button class="btn btn-primary" id="submitBtn">Submit</button>
+    <button class="btn btn-secondary" id="cancelBtn" style="display:none">Cancel editing</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card" id="queueCard">
+    <div class="title" id="queueTitle">Waiting to send</div>
+    <div class="hint" style="margin:-6px 0 10px">Saved on this phone. They send by themselves when network returns - keep this page open or come back to it.</div>
+    <div id="queueList"></div>
+    <button class="btn btn-secondary" id="sendNowBtn">Try sending now</button>
+  </div>
+
+  <div class="card">
+    <div class="title" id="recentTitle">Your last 24 hours</div>
+    <div id="recent"><div class="empty">Select your branch and name above to see your own recent entries.</div></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // The same web app link the main form uses.
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwVcrJvLZUyksWr-snAmiT_UAStuTu4KcBo7pz6Y6-r1doCDYdomkp_9ZqgdUVFYKx_3g/exec';
+  var MAX_RESULTS = 10;
+  var TIMEOUT_MS = 60000;
+
+  // Form layout as of 8 Oct 2026. Replaced by whatever the script sends
+  // back, so a field added to Code.gs later appears here by itself.
+  var CFG = {
+    branches: ['ABUJA','IBADAN','TARABA','KANO','LAGOS','PH','ADAMAWA','EDO','LIBERIA','SIERRA','GHANA'],
+    amountFields: [
+      {key:'transfer',label:'Transfer'},{key:'paidReceivable',label:'Paid Receivable'},
+      {key:'receivables',label:'Receivables'},{key:'advanceUsed',label:'Advance Used'},
+      {key:'discount',label:'Discount'},{key:'rebate',label:'Rebate'},{key:'refund',label:'Refund'}],
+    cashFields: [{key:'cashSales',label:'Cash Sales'},{key:'cashDeposited',label:'Cash Deposited'}],
+    advanceFields: [{key:'advance',label:'Advance'}],
+    rebateUsedFields: [{key:'rebateUsed',label:'Rebate Used'}],
+    returnFields: [{key:'returnAmount',label:'Return'}],
+    cashDeskBranches: {ADAMAWA:2}
+  };
+
+  // ---------- storage (falls back to memory if the phone blocks it) ----------
+  var mem = {}, storageOk = true;
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); }
+    catch (e) { return key in mem ? mem[key] : fallback; }
+  }
+  function save(key, value) {
+    mem[key] = value;
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { storageOk = false; }
+  }
+  try { localStorage.setItem('fa_test', '1'); localStorage.removeItem('fa_test'); } catch (e) { storageOk = false; }
+
+  var savedCfg = load('fa_cfg', null);
+  if (savedCfg && savedCfg.branches && savedCfg.amountFields) CFG = savedCfg;
+
+  var queue = load('fa_queue', []);
+  var lists = { salesReps: [], customers: [] };
+  var editing = null;      // {responseId, minutesRemaining} while editing a sent entry
+  var selectedCustomer = '';
+  var sending = false;
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function newId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    var b = new Uint8Array(16);
+    (window.crypto || window.msCrypto).getRandomValues(b);
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    var h = Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  }
+  function num(v) {
+    var c = String(v === null || v === undefined ? '' : v).replace(/,/g, '').trim();
+    if (c === '') return 0;
+    var n = Number(c);
+    return isFinite(n) ? n : NaN;
+  }
+  function money(n) { return 'N' + Number(n).toLocaleString('en-US'); }
+
+  // ---------- talking to the script ----------
+  // Sent as plain text on purpose: that keeps it a "simple" request, which
+  // is the only kind an Apps Script web app accepts from another site.
+  function api(payload) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, TIMEOUT_MS);
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).finally(function () { clearTimeout(timer); });
+  }
+
+  function setNet(text) {
+    $('net').textContent = text || '';
+    $('net').style.display = text ? 'block' : 'none';
+  }
+
+  // ---------- form layout ----------
+  function gridFields() {
+    return CFG.amountFields.concat(CFG.advanceFields || [], CFG.rebateUsedFields || [], CFG.returnFields || []);
+  }
+  function allFields() { return gridFields().concat(CFG.cashFields || []); }
+
+  function amountBox(f) {
+    var wrap = el('div');
+    var lab = el('label', null, f.label + ' (Naira)');
+    lab.htmlFor = 'f_' + f.key;
+    var inp = el('input');
+    inp.type = 'text'; inp.id = 'f_' + f.key; inp.inputMode = 'decimal'; inp.placeholder = '0';
+    inp.addEventListener('input', function () {
+      // digits and at most one decimal point; commas on the whole-number part
+      var raw = inp.value.replace(/[^\d.]/g, '');
+      var dot = raw.indexOf('.');
+      if (dot !== -1) raw = raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, '');
+      if (!raw) { inp.value = ''; return; }
+      var p = raw.split('.');
+      var whole = p[0] === '' ? '0' : Number(p[0]).toLocaleString('en-US');
+      inp.value = p.length > 1 ? whole + '.' + p[1] : whole;
+    });
+    wrap.appendChild(lab); wrap.appendChild(inp);
+    return wrap;
+  }
+
+  function buildForm() {
+    var keep = collect();
+    var b = $('branch'); b.textContent = '';
+    b.appendChild(new Option('Select branch...', ''));
+    CFG.branches.forEach(function (x) { b.appendChild(new Option(x, x)); });
+    b.value = CFG.branches.indexOf(keep.branch) !== -1 ? keep.branch : '';
+
+    var g = $('amountGrid'); g.textContent = '';
+    gridFields().forEach(function (f) {
+      g.appendChild(amountBox(f));
+      if (f.key === 'receivables') {
+        var w = el('div');
+        var lab = el('label', null, 'Receivables Due Date'); lab.htmlFor = 'receivablesDueDate';
+        var d = el('input'); d.type = 'date'; d.id = 'receivablesDueDate';
+        w.appendChild(lab); w.appendChild(d);
+        w.appendChild(el('div', 'hint', 'Required if Receivables has an amount.'));
+        g.appendChild(w);
+      }
+    });
+    var c = $('cashGrid'); c.textContent = '';
+    (CFG.cashFields || []).forEach(function (f) { c.appendChild(amountBox(f)); });
+
+    allFields().forEach(function (f) { if (keep[f.key]) $('f_' + f.key).value = keep[f.key]; });
+    if (keep.receivablesDueDate) $('receivablesDueDate').value = keep.receivablesDueDate;
+  }
+
+  function deskCount(branch) { return (CFG.cashDeskBranches || {})[branch] || 1; }
+
+  function updateDesk(value) {
+    var n = deskCount($('branch').value), s = $('cashDesk');
+    var cur = value || s.value;
+    s.textContent = '';
+    $('deskField').style.display = n > 1 ? 'block' : 'none';
+    for (var i = 1; i <= n && n > 1; i++) s.appendChild(new Option('Desk ' + i, String(i)));
+    if (n > 1) s.value = (cur && Number(cur) <= n) ? String(cur) : '1';
+  }
+
+  function updateNames() {
+    var s = $('submittedBy'), branch = $('branch').value;
+    var cur = s.value || load('fa_name', '');
+    s.textContent = '';
+    s.appendChild(new Option(branch ? 'Select your name...' : 'Select branch first', ''));
+    lists.salesReps.forEach(function (n) { s.appendChild(new Option(n, n)); });
+    s.value = lists.salesReps.indexOf(cur) !== -1 ? cur : '';
+  }
+
+  // ---------- customer search ----------
+  function closeResults() { $('results').className = 'results'; $('results').textContent = ''; }
+  function setCustomer(name) {
+    selectedCustomer = name || '';
+    $('customerSearch').value = selectedCustomer;
+    $('customerHint').style.display = 'none';
+    closeResults();
+  }
+  function updateCustomerBox() {
+    var branch = $('branch').value, s = $('customerSearch');
+    s.disabled = !branch || !lists.customers.length;
+    s.placeholder = !branch ? 'Select branch first' : (lists.customers.length ? 'Type to search...' : 'List not loaded yet');
+  }
+  function showResults() {
+    var q = $('customerSearch').value.trim().toLowerCase(), all = lists.customers, hits;
+    if (!q) hits = all.slice(0, MAX_RESULTS);
+    else {
+      var starts = [], has = [];
+      all.forEach(function (n) {
+        var i = n.toLowerCase().indexOf(q);
+        if (i === 0) starts.push(n); else if (i > 0) has.push(n);
+      });
+      hits = starts.concat(has).slice(0, MAX_RESULTS);
+    }
+    var box = $('results'); box.textContent = '';
+    if (!hits.length) box.appendChild(el('div', 'none', 'No match - check spelling, or ask an admin to add this customer.'));
+    hits.forEach(function (n) {
+      var row = el('div', null, n);
+      // pointerdown fires before the box loses focus, so the tap always registers
+      row.addEventListener('pointerdown', function (e) { e.preventDefault(); setCustomer(n); });
+      box.appendChild(row);
+    });
+    box.className = 'results open';
+  }
+
+  // ---------- branch lists (reps + customers), kept on the phone ----------
+  function applyLists(branch, data) {
+    if ($('branch').value !== branch) return;
+    lists = { salesReps: data.salesReps || [], customers: data.customers || [] };
+    updateNames(); updateCustomerBox();
+    if (selectedCustomer && lists.customers.indexOf(selectedCustomer) === -1 && !editing) setCustomer('');
+  }
+
+  function loadLists() {
+    var branch = $('branch').value;
+    lists = { salesReps: [], customers: [] };
+    var cached = branch ? load('fa_lists_' + branch, null) : null;
+    if (cached) applyLists(branch, cached); else { updateNames(); updateCustomerBox(); }
+    $('listsHint').textContent = branch && !cached ? 'Loading this branch\'s names and customers...' : '';
+
+    return api({ action: 'lists', branch: branch }).then(function (res) {
+      if (!res || !res.ok) throw new Error('bad reply');
+      setNet('');
+      if (res.config && JSON.stringify(res.config) !== JSON.stringify(CFG)) {
+        CFG = res.config; save('fa_cfg', CFG); buildForm(); updateDesk();
+      }
+      if (branch && res.branch === branch) {
+        var data = { salesReps: res.salesReps, customers: res.customers };
+        save('fa_lists_' + branch, data);
+        applyLists(branch, data);
+      }
+      if ($('branch').value === branch) $('listsHint').textContent = '';
+    }).catch(function () {
+      if ($('branch').value !== branch) return;
+      $('listsHint').textContent = branch && !cached
+        ? 'Could not load this branch\'s lists. This phone needs network once to download them - then it works without.'
+        : '';
+      setNet('No network right now - entries will be saved on this phone and sent later.');
+    });
+  }
+
+  // ---------- reading / filling the form ----------
+  function collect() {
+    var d = {
+      date: $('date').value, branch: $('branch').value, customerName: selectedCustomer,
+      notes: $('notes').value, submittedBy: $('submittedBy').value,
+      receivablesDueDate: $('receivablesDueDate') ? $('receivablesDueDate').value : ''
+    };
+    allFields().forEach(function (f) { var i = $('f_' + f.key); d[f.key] = i ? i.value : ''; });
+    d.cashDesk = deskCount(d.branch) > 1 ? ($('cashDesk').value || '1') : '1';
+    return d;
+  }
+
+  function fill(d) {
+    $('date').value = d.date || today();
+    $('notes').value = d.notes || '';
+    allFields().forEach(function (f) {
+      var n = num(d[f.key]);
+      $('f_' + f.key).value = n > 0 ? Number(n).toLocaleString('en-US', { maximumFractionDigits: 10 }) : '';
+    });
+    $('receivablesDueDate').value = d.receivablesDueDate || '';
+    updateDesk(d.cashDesk);
+    setCustomer(d.customerName || '');
+  }
+
+  function clearForm() {
+    editing = null;
+    fill({ date: today() });
+    $('submitBtn').textContent = 'Submit';
+    $('cancelBtn').style.display = 'none';
+    $('editBanner').style.display = 'none';
+  }
+
+  // Same checks the script makes, done here too so a mistake is caught
+  // while the rep is still looking at the form, even with no network.
+  function check(d) {
+    var errs = [], any = false;
+    if (!d.date) errs.push('Date is required.');
+    if (!d.branch) errs.push('Select a branch.');
+    if (!d.submittedBy) errs.push('Select your name.');
+    if (!d.customerName || lists.customers.indexOf(d.customerName) === -1) errs.push('Select a customer from the list for this branch.');
+    allFields().forEach(function (f) {
+      var n = num(d[f.key]);
+      if (isNaN(n)) errs.push(f.label + ' must be a valid number.'); else if (n > 0) any = true;
+    });
+    if (num(d.receivables) > 0 && !d.receivablesDueDate) errs.push('Receivables Due Date is required when Receivables has an amount.');
+    if (!errs.length && !any) errs.push('Fill in at least one amount.');
+    return errs;
+  }
+
+  function msg(text, kind) { var m = $('msg'); m.textContent = text || ''; m.className = 'msg' + (text ? ' ' + kind : ''); }
+
+  // ---------- waiting-to-send list ----------
+  function summary(d) {
+    var parts = [];
+    allFields().forEach(function (f) { var n = num(d[f.key]); if (n > 0) parts.push(f.label + ': ' + money(n)); });
+    if (num(d.receivables) > 0 && d.receivablesDueDate) parts.push('Due: ' + d.receivablesDueDate);
+    if (deskCount(d.branch) > 1 && (num(d.cashSales) > 0 || num(d.cashDeposited) > 0)) parts.push('Desk: ' + d.cashDesk);
+    return parts.join('   ');
+  }
+
+  function drawQueue() {
+    save('fa_queue', queue);
+    $('queueCard').style.display = queue.length ? 'block' : 'none';
+    var waiting = queue.filter(function (q) { return q.status !== 'rejected'; }).length;
+    var bad = queue.length - waiting;
+    $('queueTitle').textContent = 'Waiting to send (' + waiting + ')' + (bad ? ' - ' + bad + ' need fixing' : '');
+    $('sendNowBtn').style.display = waiting ? 'block' : 'none';
+    var box = $('queueList'); box.textContent = '';
+    queue.forEach(function (item) {
+      var d = item.data, row = el('div', 'entry' + (item.status === 'rejected' ? ' bad' : ''));
+      row.appendChild(el('b', null, d.customerName));
+      row.appendChild(el('div', 'amts', summary(d)));
+      row.appendChild(el('div', 'meta', d.date + ' - ' + d.branch + ' - ' + d.submittedBy));
+      if (item.status === 'rejected') {
+        row.appendChild(el('div', 'err', 'Not accepted: ' + (item.errors || []).join(' ')));
+        var fix = el('button', 'small-btn', 'Fix and resend');
+        fix.onclick = function () { fixItem(item); };
+        row.appendChild(fix);
+      }
+      var del = el('button', 'small-btn', 'Delete');
+      del.onclick = function () {
+        if (!confirm('Delete this entry? It has NOT been sent to head office.')) return;
+        queue = queue.filter(function (q) { return q !== item; }); drawQueue();
+      };
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  function fixItem(item) {
+    queue = queue.filter(function (q) { return q !== item; });
+    drawQueue();
+    clearForm();
+    $('branch').value = item.data.branch;
+    save('fa_branch', item.data.branch);
+    loadLists();
+    if (item.data.submittedBy && lists.salesReps.indexOf(item.data.submittedBy) !== -1) $('submittedBy').value = item.data.submittedBy;
+    fill(item.data);
+    msg('Correct the entry, then press Submit again.', 'wait');
+    window.scrollTo(0, 0);
+  }
+
+  function flush() {
+    if (sending) return;
+    var next = queue.filter(function (q) { return q.status !== 'rejected'; })[0];
+    if (!next) return;
+    sending = true;
+    $('sendNowBtn').disabled = true;
+    api({ action: 'submit', clientId: next.clientId, data: next.data }).then(function (res) {
+      sending = false; $('sendNowBtn').disabled = false;
+      setNet('');
+      if (res && res.ok) {
+        queue = queue.filter(function (q) { return q !== next; });
+        drawQueue();
+        msg('Entry sent to head office.', 'success');
+        refreshRecent();
+        flush();
+      } else if (res && res.retry) {
+        setTimeout(flush, 20000);
+      } else {
+        next.status = 'rejected';
+        next.errors = (res && res.errors) || ['Unknown problem.'];
+        drawQueue();
+        msg('One entry was not accepted - see "Waiting to send" below.', 'error');
+        flush();
+      }
+    }).catch(function () {
+      sending = false; $('sendNowBtn').disabled = false;
+      setNet('No network right now - ' + queue.length + ' entr' + (queue.length === 1 ? 'y is' : 'ies are') + ' saved on this phone and will send later.');
+    });
+  }
+
+  // ---------- submit / edit ----------
+  function submit() {
+    var d = collect(), errs = check(d);
+    if (errs.length) { msg(errs.join(' '), 'error'); return; }
+
+    if (editing) {
+      var btn = $('submitBtn'); btn.disabled = true;
+      msg('Saving changes...', 'wait');
+      api({ action: 'update', responseId: editing.responseId, data: d }).then(function (res) {
+        btn.disabled = false;
+        if (!res || !res.ok) { msg(((res && res.errors) || ['Could not save.']).join(' '), 'error'); return; }
+        clearForm(); msg('Entry updated.', 'success'); refreshRecent();
+      }).catch(function () {
+        btn.disabled = false;
+        msg('Changes NOT saved - editing an entry that is already sent needs network. Try again when it returns.', 'error');
+      });
+      return;
+    }
+
+    queue.push({ clientId: newId(), data: d, at: Date.now(), status: 'pending' });
+    drawQueue();
+    clearForm();
+    msg(storageOk ? 'Saved on this phone - sending...' : 'Sending... keep this page open until it says sent.', 'wait');
+    flush();
+  }
+
+  // ---------- your last 24 hours (needs network) ----------
+  function refreshRecent() {
+    var branch = $('branch').value, name = $('submittedBy').value, box = $('recent');
+    $('recentTitle').textContent = 'Your last 24 hours' + (branch ? ' - ' + branch : '');
+    if (!branch || !name) {
+      box.textContent = '';
+      box.appendChild(el('div', 'empty', 'Select your branch and name above to see your own recent entries.'));
+      return;
+    }
+    api({ action: 'recent', branch: branch, submittedBy: name }).then(function (res) {
+      if ($('branch').value !== branch || $('submittedBy').value !== name) return;
+      var entries = (res && res.entries) || [];
+      box.textContent = '';
+      if (!entries.length) { box.appendChild(el('div', 'empty', 'No entries by you for ' + branch + ' in the last 24 hours yet.')); return; }
+      entries.forEach(function (e) {
+        var row = el('div', 'entry');
+        row.appendChild(el('b', null, e.customerName));
+        row.appendChild(el('div', 'amts', summary(e)));
+        row.appendChild(el('div', 'meta', e.date + ' - ' + e.submittedBy));
+        row.appendChild(el('div', 'err', e.minutesRemaining + ' minutes left to edit'));
+        var b = el('button', 'small-btn', 'Edit');
+        b.onclick = function () { startEdit(e); };
+        row.appendChild(b);
+        box.appendChild(row);
+      });
+    }).catch(function () {
+      if ($('branch').value !== branch) return;
+      box.textContent = '';
+      box.appendChild(el('div', 'empty', 'Needs network to show entries already sent.'));
+    });
+  }
+
+  function startEdit(e) {
+    editing = { responseId: e.responseId };
+    fill(e);
+    $('submitBtn').textContent = 'Save changes';
+    $('cancelBtn').style.display = 'block';
+    $('editBanner').textContent = 'Editing an earlier entry - you have ' + e.minutesRemaining + ' minutes left to save changes.';
+    $('editBanner').style.display = 'block';
+    msg('');
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- start ----------
+  buildForm();
+  $('date').value = today();
+  var savedBranch = load('fa_branch', '');
+  if (CFG.branches.indexOf(savedBranch) !== -1) $('branch').value = savedBranch;
+  updateDesk();
+  drawQueue();
+  loadLists().then(function () { refreshRecent(); flush(); });
+
+  $('branch').addEventListener('change', function () {
+    save('fa_branch', $('branch').value);
+    if (editing) clearForm(); else setCustomer('');
+    updateDesk();
+    loadLists().then(refreshRecent);
+  });
+  $('submittedBy').addEventListener('change', function () {
+    if ($('submittedBy').value) save('fa_name', $('submittedBy').value);
+    refreshRecent();
+  });
+  $('customerSearch').addEventListener('focus', showResults);
+  $('customerSearch').addEventListener('input', function () { selectedCustomer = ''; showResults(); });
+  $('customerSearch').addEventListener('blur', function () {
+    closeResults();
+    $('customerHint').style.display = ($('customerSearch').value.trim() && !selectedCustomer) ? 'block' : 'none';
+  });
+  $('submitBtn').addEventListener('click', submit);
+  $('cancelBtn').addEventListener('click', function () { clearForm(); msg(''); });
+  $('sendNowBtn').addEventListener('click', flush);
+
+  window.addEventListener('online', flush);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) flush(); });
+  setInterval(flush, 60000);
+
+  // Lets the page itself open with no network after the first visit.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
